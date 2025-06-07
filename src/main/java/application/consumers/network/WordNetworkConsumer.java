@@ -1,6 +1,8 @@
-package application;
+package application.consumers.network;
 
-import config.Config;
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
+import application.consumers.persistence.WordConsumer;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -8,10 +10,10 @@ import java.net.Socket;
 
 public class WordNetworkConsumer implements Runnable {
     final int port;
-    final AgentCommunicationChanel chanel;
+    final CommunicationChanel chanel;
     final Queues queues;
 
-    public WordNetworkConsumer(int port, AgentCommunicationChanel chanel, Queues queues) {
+    public WordNetworkConsumer(int port, CommunicationChanel chanel, Queues queues) {
         this.port = port;
         this.chanel = chanel;
         this.queues = queues;

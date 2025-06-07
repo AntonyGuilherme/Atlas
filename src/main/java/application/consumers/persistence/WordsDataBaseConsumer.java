@@ -1,13 +1,16 @@
-package application;
+package application.consumers.persistence;
+
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class WordsDataBaseConsumer implements Runnable {
     final Queues queues;
-    final AgentCommunicationChanel chanel;
+    final CommunicationChanel chanel;
 
-    public WordsDataBaseConsumer(AgentCommunicationChanel chanel, Queues queues) {
+    public WordsDataBaseConsumer(CommunicationChanel chanel, Queues queues) {
         this.queues = queues;
         this.chanel = chanel;
     }
@@ -19,7 +22,9 @@ public class WordsDataBaseConsumer implements Runnable {
 
         while ((word = queues.words.poll()) != null || !chanel.shuffling.get()) {
             if (word != null) {
-                words.put(word, words.getOrDefault(word, 0) + 1);
+                String[] wordAndFrequency = word.split(" ");
+                words.putIfAbsent(wordAndFrequency[0], 0);
+                words.merge(wordAndFrequency[0], Integer.parseInt(wordAndFrequency[1]), Integer::sum);
 
                 if (words.size() >= 100000) {
                     Map<String, Integer> snapshot = words;

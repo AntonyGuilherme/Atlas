@@ -1,19 +1,20 @@
-package application;
+package application.producers.network;
 
+import application.communication.Queues;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
-import config.Config;
-import infrastructure.repositories.WordRockRepository;
+import configuration.Parameters;
+import application.consumers.persistence.WordRockRepository;
 import org.rocksdb.RocksIterator;
 
 import java.nio.charset.StandardCharsets;
 
-public class RangesAnnouncer implements Runnable {
+public class RangesProducer implements Runnable {
     final Queues queues;
     final Integer agentId;
 
-    public RangesAnnouncer(Queues queues, Integer agentId) {
+    public RangesProducer(Queues queues, Integer agentId) {
         this.queues = queues;
         this.agentId = agentId;
     }
@@ -51,11 +52,11 @@ public class RangesAnnouncer implements Runnable {
             if (partialMin < min) min = partialMax;
         }
 
-        int difference = (int) (0.5 + (double) (max - min) / Config.NUMBER_OF_AGENTS);
+        int difference = (int) (0.5 + (double) (max - min) / Parameters.NUMBER_OF_AGENTS);
 
         RangeMap<Integer, Integer> ranges = TreeRangeMap.create();
 
-        for (int i = 0; i < Config.NUMBER_OF_AGENTS; i++) {
+        for (int i = 0; i < Parameters.NUMBER_OF_AGENTS; i++) {
             int agentMin = max - difference * (i + 1);
             int agentMax = agentMin + difference;
             if (agentMin > 1) agentMin++;

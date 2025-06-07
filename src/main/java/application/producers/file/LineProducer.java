@@ -1,4 +1,7 @@
-package application;
+package application.producers.file;
+
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,10 +10,10 @@ import java.io.IOException;
 
 public class LineProducer implements Runnable {
     final String path;
-    final AgentCommunicationChanel chanel;
+    final CommunicationChanel chanel;
     final Queues queues;
 
-    public LineProducer(String path, AgentCommunicationChanel chanel, Queues queues) {
+    public LineProducer(String path, CommunicationChanel chanel, Queues queues) {
         this.path = path;
         this.chanel = chanel;
         chanel.files.incrementAndGet();

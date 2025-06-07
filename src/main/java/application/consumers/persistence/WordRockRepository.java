@@ -1,8 +1,8 @@
-package infrastructure.repositories;
+package application.consumers.persistence;
 
-import application.AgentCommunicationChanel;
-import application.NetworkMessageEmitter;
-import application.Queues;
+import application.communication.CommunicationChanel;
+import application.producers.network.MessageProducer;
+import application.communication.Queues;
 import org.rocksdb.*;
 
 import java.io.File;
@@ -12,14 +12,14 @@ import java.nio.file.Files;
 import java.util.Map;
 
 public class WordRockRepository implements Runnable {
-    AgentCommunicationChanel chanel;
+    CommunicationChanel chanel;
     Queues queues;
     final String NAME = "romulus";
     Integer ownerId;
     File dbPath;
     RocksDB db;
 
-    public WordRockRepository(Queues queues, AgentCommunicationChanel chanel, Integer ownerId) {
+    public WordRockRepository(Queues queues, CommunicationChanel chanel, Integer ownerId) {
         this.queues = queues;
         this.chanel = chanel;
         this.ownerId = ownerId;
@@ -32,7 +32,7 @@ public class WordRockRepository implements Runnable {
         final Options options = new Options();
         options.setCreateIfMissing(true);
         options.setMergeOperator(new UInt64AddOperator());
-        dbPath = new File("/tmp/rocks-db", NAME);
+        dbPath = new File("db", NAME);
         try {
             Files.createDirectories(dbPath.getParentFile().toPath());
             Files.createDirectories(dbPath.getAbsoluteFile().toPath());
@@ -85,7 +85,7 @@ public class WordRockRepository implements Runnable {
             }
         }
 
-        NetworkMessageEmitter.flood(String.format("%d,%d", min,max), this.ownerId);
+        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
 
         System.out.printf("Words min and max: %d ; %d", min, max);
 

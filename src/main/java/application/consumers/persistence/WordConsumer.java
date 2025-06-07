@@ -1,4 +1,6 @@
-package application;
+package application.consumers.persistence;
+
+import application.communication.Queues;
 
 import java.io.BufferedReader;
 import java.io.IOException;

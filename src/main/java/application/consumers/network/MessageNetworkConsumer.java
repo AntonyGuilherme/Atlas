@@ -1,6 +1,8 @@
-package application;
+package application.consumers.network;
 
-import config.Config;
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
+import configuration.Parameters;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,10 +12,10 @@ import java.net.Socket;
 
 public class MessageNetworkConsumer implements Runnable {
     final int port;
-    final AgentCommunicationChanel chanel;
+    final CommunicationChanel chanel;
     final Queues queues;
 
-    public MessageNetworkConsumer(int port, AgentCommunicationChanel chanel, Queues queues) {
+    public MessageNetworkConsumer(int port, CommunicationChanel chanel, Queues queues) {
         this.port = port;
         this.chanel = chanel;
         this.queues = queues;
@@ -29,11 +31,10 @@ public class MessageNetworkConsumer implements Runnable {
                     String message = buffer.readLine();
 
                     while (message != null) {
-                        if (message.equals(Config.FINISHED))
-                            chanel.shuffling.set(chanel.agentsFinished.incrementAndGet() >= Config.NUMBER_OF_AGENTS);
+                        if (message.equals(Parameters.FINISHED))
+                            chanel.shuffling.set(chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
                         else {
-                            chanel.allFinished.set(chanel.agentsWithMinAndMax.incrementAndGet() >= Config.NUMBER_OF_AGENTS);
-                            System.out.println(message);
+                            chanel.allFinished.set(chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
                             this.queues.ranges.add(message);
                         }
 

@@ -1,10 +1,9 @@
-package application;
+package application.communication;
 
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class AgentCommunicationChanel {
+public class CommunicationChanel {
     public AtomicBoolean finished = new AtomicBoolean(false);
     public final AtomicInteger files = new AtomicInteger(0);
     public final AtomicInteger lines = new AtomicInteger(0);

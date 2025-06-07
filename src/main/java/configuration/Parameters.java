@@ -1,10 +1,8 @@
-package config;
-
-import application.Agent;
+package configuration;
 
 import java.util.*;
 
-public class Config {
+public class Parameters {
     public static final String HOST = "localhost";
     public final static Integer NUMBER_OF_AGENTS = 1;
     public final static Map<Integer, List<Connection>> LISTEN_TO = new HashMap<>();

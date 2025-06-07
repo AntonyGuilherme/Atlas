@@ -1,7 +1,7 @@
-package infrastructure.repositories;
+package application.consumers.persistence;
 
-import application.AgentCommunicationChanel;
-import application.Queues;
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
 
 import java.sql.*;
 import java.util.HashMap;
@@ -55,7 +55,7 @@ public class WordRepository {
         }
     }
 
-    public static void save(AgentCommunicationChanel chanel, Queues queues) {
+    public static void save(CommunicationChanel chanel, Queues queues) {
         Long startTime = System.currentTimeMillis();
 
         createTable();

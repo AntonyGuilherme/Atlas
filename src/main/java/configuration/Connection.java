@@ -1,4 +1,4 @@
-package config;
+package configuration;
 
 public class Connection {
     public final String HOST;
@@ -8,7 +8,7 @@ public class Connection {
     public Connection(String host, Integer port) {
         this.HOST = host;
         this.WORD_PORT = port;
-        this.MESSAGE_PORT = port + Config.NUMBER_OF_AGENTS * Config.NUMBER_OF_AGENTS;
+        this.MESSAGE_PORT = port + Parameters.NUMBER_OF_AGENTS * Parameters.NUMBER_OF_AGENTS;
     }
 
     @Override

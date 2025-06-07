@@ -1,13 +1,15 @@
-package application;
+package application.producers.file;
 
-import config.Config;
+import application.communication.CommunicationChanel;
+import application.communication.Queues;
+import configuration.Parameters;
 
 public class WordProducer implements Runnable {
 
-    final AgentCommunicationChanel chanel;
+    final CommunicationChanel chanel;
     final Queues queues;
 
-    public WordProducer(AgentCommunicationChanel chanel, Queues queues) {
+    public WordProducer(CommunicationChanel chanel, Queues queues) {
         this.chanel = chanel;
         this.chanel.lines.incrementAndGet();
         this.queues = queues;
@@ -31,7 +33,7 @@ public class WordProducer implements Runnable {
 
     public void shuffle(String word) {
         long unsignedHash = word.hashCode() & 0xFFFFFFFFL;
-        int hash = (int) (unsignedHash % Config.NUMBER_OF_AGENTS);
+        int hash = (int) (unsignedHash % Parameters.NUMBER_OF_AGENTS);
 
         queues.wordsByAgent.get(hash).add(word);
     }
