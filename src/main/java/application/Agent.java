@@ -2,12 +2,12 @@ package application;
 
 import config.Config;
 import config.Connection;
+import infrastructure.repositories.WordRockRepository;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Agent {
-
     final int agentId;
     final AgentCommunicationChanel chanel;
     final Queues queues;
@@ -24,10 +24,12 @@ public class Agent {
     public void prepareConsumers() {
         // messages from every other agent, so one by agent is enough
         for (Connection connection: Config.LISTEN_TO.get(agentId)) {
-            System.out.println("Agent " + agentId + " is connecting to " + connection);
-            new Thread(new MessageNetworkConsumer(connection.MESSAGE_PORT, chanel)).start();
-            new Thread(new WordNetworkConsumer(connection.WORD_PORT, chanel)).start();
+            new Thread(new MessageNetworkConsumer(connection.MESSAGE_PORT, chanel, queues)).start();
+            new Thread(new WordNetworkConsumer(connection.WORD_PORT, chanel, queues)).start();
         }
+
+        new Thread(new WordsDataBaseConsumer(chanel, queues)).start();
+        new Thread(new WordRockRepository(queues, chanel, agentId)).start();
     }
 
     public void mapAndShuffleFiles(String... files) {

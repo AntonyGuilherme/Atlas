@@ -11,25 +11,31 @@ import java.net.Socket;
 public class MessageNetworkConsumer implements Runnable {
     final int port;
     final AgentCommunicationChanel chanel;
+    final Queues queues;
 
-    public MessageNetworkConsumer(int port, AgentCommunicationChanel chanel) {
+    public MessageNetworkConsumer(int port, AgentCommunicationChanel chanel, Queues queues) {
         this.port = port;
         this.chanel = chanel;
+        this.queues = queues;
     }
 
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (!chanel.shuffling.get()) {
+            while (!chanel.allFinished.get()) {
                 Socket socket = serverSocket.accept();
 
                 try(BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()))){
                     String message = buffer.readLine();
 
                     while (message != null) {
-                        chanel.shuffling.set(
-                                message.equals(Config.FINISHED) &&
-                                chanel.agentsFinished.incrementAndGet() == Config.NUMBER_OF_AGENTS);
+                        if (message.equals(Config.FINISHED))
+                            chanel.shuffling.set(chanel.agentsFinished.incrementAndGet() >= Config.NUMBER_OF_AGENTS);
+                        else {
+                            chanel.allFinished.set(chanel.agentsWithMinAndMax.incrementAndGet() >= Config.NUMBER_OF_AGENTS);
+                            System.out.println(message);
+                            this.queues.ranges.add(message);
+                        }
 
                         message = buffer.readLine();
                     }
@@ -38,6 +44,8 @@ public class MessageNetworkConsumer implements Runnable {
                     throw new RuntimeException(e);
                 }
             }
+
+            System.out.println("[FINISHED]");
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -9,26 +9,25 @@ import java.net.Socket;
 public class WordNetworkConsumer implements Runnable {
     final int port;
     final AgentCommunicationChanel chanel;
+    final Queues queues;
 
-    public WordNetworkConsumer(int port, AgentCommunicationChanel chanel) {
+    public WordNetworkConsumer(int port, AgentCommunicationChanel chanel, Queues queues) {
         this.port = port;
         this.chanel = chanel;
+        this.queues = queues;
     }
 
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("Waiting for incoming connection...");
 
             while (!chanel.shuffling.get()) {
                 Socket socket = serverSocket.accept();
-                new Thread(new WordConsumer(socket)).start();
+                new Thread(new WordConsumer(socket, queues)).start();
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        System.out.println("WORD CONSUMER STOPS "+ port);
     }
 }

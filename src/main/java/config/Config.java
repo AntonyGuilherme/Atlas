@@ -6,16 +6,14 @@ import java.util.*;
 
 public class Config {
     public static final String HOST = "localhost";
-    public final static Integer NUMBER_OF_AGENTS = 3;
+    public final static Integer NUMBER_OF_AGENTS = 1;
     public final static Map<Integer, List<Connection>> LISTEN_TO = new HashMap<>();
     public final static Map<Integer, List<Connection>> EMIT_TO = new HashMap<>();
 
     static {
 
         final String[] HOSTS = new String[NUMBER_OF_AGENTS];
-        HOSTS[0] = HOST;
-        HOSTS[1] = HOST;
-        HOSTS[2] = HOST;
+        Arrays.fill(HOSTS, HOST);
 
         for (int i  = 0; i < NUMBER_OF_AGENTS; i++) {
             LISTEN_TO.put(i, new ArrayList<>());

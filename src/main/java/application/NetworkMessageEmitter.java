@@ -21,7 +21,6 @@ public class NetworkMessageEmitter {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 }

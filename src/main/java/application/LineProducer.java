@@ -23,10 +23,8 @@ public class LineProducer implements Runnable {
 
         try (BufferedReader buffer = new BufferedReader(new FileReader(file))) {
             String line;
-            while ((line = buffer.readLine()) != null) {
+            while ((line = buffer.readLine()) != null)
                 queues.lines.add(line);
-                System.out.println(line);
-            }
 
             chanel.files.decrementAndGet();
         }

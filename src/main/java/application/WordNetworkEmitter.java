@@ -16,7 +16,6 @@ public class WordNetworkEmitter implements Runnable {
     final int ownerId;;
     final AgentCommunicationChanel chanel;
 
-
     public WordNetworkEmitter(Integer ownerId,
                               Connection connection,
                               Integer agentId,
@@ -43,7 +42,7 @@ public class WordNetworkEmitter implements Runnable {
                     out.newLine();
                     words++;
 
-                    if (words >= 1000){
+                    if (words >= 10000){
                         out.flush();
                         words = 0;
                     }
@@ -54,7 +53,6 @@ public class WordNetworkEmitter implements Runnable {
                 out.flush();
 
             if (!this.chanel.finished.getAndSet(true)) {
-                System.out.println("[NETWORK] Emission is Finished");
                 NetworkMessageEmitter.flood(Config.FINISHED, ownerId);
             }
 
