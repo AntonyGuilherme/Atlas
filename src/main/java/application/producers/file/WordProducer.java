@@ -11,7 +11,7 @@ public class WordProducer implements Runnable {
 
     public WordProducer(CommunicationChanel chanel, Queues queues) {
         this.chanel = chanel;
-        this.chanel.lines.incrementAndGet();
+        this.chanel.LINES_PRODUCER_RUNNING.incrementAndGet();
         this.queues = queues;
     }
 
@@ -19,7 +19,7 @@ public class WordProducer implements Runnable {
     public void run() {
         String line;
 
-        while ((line = queues.lines.poll()) != null || chanel.files.get() > 0) {
+        while ((line = queues.lines.poll()) != null || chanel.QUANTITY_OF_FILES_TO_CONSUME.get() > 0) {
             if (line != null && !line.isBlank()) {
                 for (String word : line.split("\\s+")) {
                     if (word != null && !word.isEmpty())
@@ -28,7 +28,7 @@ public class WordProducer implements Runnable {
             }
         }
 
-        this.chanel.lines.decrementAndGet();
+        this.chanel.LINES_PRODUCER_RUNNING.decrementAndGet();
     }
 
     public void shuffle(String word) {

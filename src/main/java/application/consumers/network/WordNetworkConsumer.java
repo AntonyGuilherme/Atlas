@@ -3,6 +3,7 @@ package application.consumers.network;
 import application.communication.CommunicationChanel;
 import application.communication.Queues;
 import application.consumers.persistence.WordConsumer;
+import configuration.Parameters;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -23,7 +24,7 @@ public class WordNetworkConsumer implements Runnable {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
 
-            while (!chanel.shuffling.get()) {
+            while (chanel.allFinished.intValue() < Parameters.NUMBER_OF_AGENTS) {
                 Socket socket = serverSocket.accept();
                 new Thread(new WordConsumer(socket, queues)).start();
             }

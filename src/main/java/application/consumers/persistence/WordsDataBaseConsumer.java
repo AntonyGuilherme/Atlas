@@ -1,18 +1,18 @@
 package application.consumers.persistence;
 
-import application.communication.CommunicationChanel;
 import application.communication.Queues;
+import application.communication.RunningOptions;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class WordsDataBaseConsumer implements Runnable {
     final Queues queues;
-    final CommunicationChanel chanel;
+    final RunningOptions options;
 
-    public WordsDataBaseConsumer(CommunicationChanel chanel, Queues queues) {
+    public WordsDataBaseConsumer(RunningOptions options, Queues queues) {
         this.queues = queues;
-        this.chanel = chanel;
+        this.options = options;
     }
 
     @Override
@@ -20,9 +20,9 @@ public class WordsDataBaseConsumer implements Runnable {
         String word;
         Map<String, Integer> words = new HashMap<>();
 
-        while ((word = queues.words.poll()) != null || !chanel.shuffling.get()) {
+        while ((word = queues.words.poll()) != null || options.dataStillOnStreaming()) {
             if (word != null) {
-                String[] wordAndFrequency = word.split(" ");
+                String[] wordAndFrequency = word.split("\\s+");
                 words.putIfAbsent(wordAndFrequency[0], 0);
                 words.merge(wordAndFrequency[0], Integer.parseInt(wordAndFrequency[1]), Integer::sum);
 
@@ -39,6 +39,6 @@ public class WordsDataBaseConsumer implements Runnable {
             queues.wordsToPersist.add(words);
         }
 
-        chanel.persistenceFinished.set(true);
+        this.options.onFinished();
     }
 }

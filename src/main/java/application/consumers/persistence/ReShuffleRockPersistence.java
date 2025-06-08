@@ -1,8 +1,8 @@
 package application.consumers.persistence;
 
+import application.communication.Queues;
 import application.communication.RunningOptions;
 import application.producers.network.MessageProducer;
-import application.communication.Queues;
 import org.rocksdb.*;
 
 import java.io.File;
@@ -11,33 +11,32 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Map;
 
-public class WordRockRepository implements Runnable {
+public class ReShuffleRockPersistence implements Runnable {
     RunningOptions options;
     Queues queues;
-    final String NAME = "romulus";
+    final String NAME = "remus";
     Integer ownerId;
-    File dbPath;
     RocksDB db;
 
-    public WordRockRepository(Queues queues, RunningOptions options, Integer ownerId) {
+    public ReShuffleRockPersistence(Queues queues, RunningOptions options, Integer ownerId) {
         this.queues = queues;
         this.ownerId = ownerId;
         this.options = options;
     }
 
-    public WordRockRepository() {}
+    public ReShuffleRockPersistence() {}
 
     public void init() {
         RocksDB.loadLibrary();
         final Options options = new Options();
         options.setCreateIfMissing(true);
         options.setMergeOperator(new UInt64AddOperator());
-        dbPath = new File("db", NAME);
+        File dbPath = new File("db", NAME);
         try {
             Files.createDirectories(dbPath.getParentFile().toPath());
             Files.createDirectories(dbPath.getAbsoluteFile().toPath());
             db = RocksDB.open(options, dbPath.getAbsolutePath());
-//            System.out.println("RocksDB initialized and ready to use");
+            System.out.printf("[DATABASE] CREATE %s\n",NAME);
         } catch(IOException | RocksDBException ex) {
             System.out.println(ex.getMessage());
         }
@@ -45,16 +44,14 @@ public class WordRockRepository implements Runnable {
 
     @Override
     public void run() {
-        Long start = System.currentTimeMillis();
         init();
 
         try (final WriteOptions writeOpt = new WriteOptions()) {
-
             Map<String, Integer> words;
             while ((words = queues.wordsToPersist.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (words != null) {
                         Long insertStart = System.currentTimeMillis();
-//                        System.out.println("Persisting words into RocksDB");
+                        System.out.printf("Persisting words into %s\n", NAME);
                         try (final WriteBatch batch = new WriteBatch()) {
                             for (Map.Entry<String, Integer> word : words.entrySet())
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
@@ -65,39 +62,22 @@ public class WordRockRepository implements Runnable {
                         }
 
                         Long insertEnd = System.currentTimeMillis();
-//                        System.out.printf("Partial Write in %d\n", insertEnd - insertStart);
+                        System.out.printf("Partial Write in %d\n", insertEnd - insertStart);
                 }
             }
         }
 
-        Long end = System.currentTimeMillis();
-
-//        System.out.println("RocksDB write completed in " + (end - start) + "ms");
-
-        long max = 0;
-        long min = Integer.MAX_VALUE;
-
-        try (RocksIterator iterator = db.newIterator()) {
-            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                long freq = ByteUtils.bytesToLong(iterator.value());
-                if (max < freq) max = freq;
-                else if (min > freq) min = freq;
-            }
-        }
-
-        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
-
         db.close();
 
-        System.out.println("RocksDB closed");
+        System.out.printf("[DATABASE] DONE %s\n",NAME);
     }
 
     public RocksIterator getIterator() {
-        return db.newIterator();
+        return this.db.newIterator();
     }
 
     public void close() {
-        db.close();
+        this.db.close();
     }
 
     public static class ByteUtils {

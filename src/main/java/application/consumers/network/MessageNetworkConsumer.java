@@ -2,6 +2,7 @@ package application.consumers.network;
 
 import application.communication.CommunicationChanel;
 import application.communication.Queues;
+import application.producers.network.RangesProducer;
 import configuration.Parameters;
 
 import java.io.BufferedReader;
@@ -14,31 +15,37 @@ public class MessageNetworkConsumer implements Runnable {
     final int port;
     final CommunicationChanel chanel;
     final Queues queues;
+    final Integer agentId;
 
-    public MessageNetworkConsumer(int port, CommunicationChanel chanel, Queues queues) {
+    public MessageNetworkConsumer(int port, CommunicationChanel chanel, Queues queues, Integer agentId) {
         this.port = port;
         this.chanel = chanel;
         this.queues = queues;
+        this.agentId = agentId;
     }
 
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (!chanel.allFinished.get()) {
+            while (chanel.allFinished.intValue() < Parameters.NUMBER_OF_AGENTS) {
                 Socket socket = serverSocket.accept();
 
                 try(BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()))){
                     String message = buffer.readLine();
 
-                    while (message != null) {
-                        if (message.equals(Parameters.FINISHED))
-                            chanel.shuffling.set(chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
-                        else {
-                            chanel.allFinished.set(chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
-                            this.queues.ranges.add(message);
-                        }
+                    if (message != null) {
+                        if (message.equals(Parameters.FIRST_SHUFFLE_FINISHED))
+                            chanel.FIRST_SHUFFLE_FINISHED.set(chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
+                        else if (message.equals(Parameters.FINISHED))
+                            chanel.allFinished.increment();
 
-                        message = buffer.readLine();
+                        else {
+                            System.out.println("Message received: " + message);
+                            this.queues.ranges.add(message);
+                            if (chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS){
+                                new Thread(new RangesProducer(queues, chanel, this.agentId)).start();
+                            }
+                        }
                     }
 
                 } catch (IOException e) {

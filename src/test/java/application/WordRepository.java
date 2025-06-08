@@ -1,4 +1,4 @@
-package application.consumers.persistence;
+package application;
 
 import application.communication.CommunicationChanel;
 import application.communication.Queues;

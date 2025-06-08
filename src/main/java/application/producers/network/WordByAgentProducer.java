@@ -1,8 +1,7 @@
 package application.producers.network;
 
-import application.communication.CommunicationChanel;
 import application.communication.Queues;
-import configuration.Parameters;
+import application.communication.RunningOptions;
 import configuration.Connection;
 
 import java.io.BufferedWriter;
@@ -17,19 +16,19 @@ public class WordByAgentProducer implements Runnable {
     final String host;
     final Integer port;
     final ConcurrentLinkedQueue<String> words;
-    final int ownerId;;
-    final CommunicationChanel chanel;
+    final int ownerId;
+    final RunningOptions options;
 
     public WordByAgentProducer(Integer ownerId,
                                Connection connection,
                                Integer agentId,
-                               CommunicationChanel chanel,
-                               Queues queues) {
+                               Queues queues,
+                               RunningOptions options) {
         this.host = connection.HOST;
         this.port = connection.WORD_PORT;
         this.words = queues.wordsByAgent.get(agentId);
         this.ownerId = ownerId;
-        this.chanel = chanel;
+        this.options = options;
     }
 
     @Override
@@ -37,11 +36,9 @@ public class WordByAgentProducer implements Runnable {
         try (Socket socket = new Socket(host, port);
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
-            int words = 0;
-
             String word;
             Map<String,Integer> frequencyByWord = new HashMap<>();
-            while ((word = this.words.poll()) != null || chanel.lines.get() > 0) {
+            while ((word = this.words.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (word != null) {
                     frequencyByWord.putIfAbsent(word, 0);
                     frequencyByWord.merge(word,  1, Integer::sum);
@@ -65,11 +62,12 @@ public class WordByAgentProducer implements Runnable {
                     out.newLine();
                 }
 
+                System.out.println(frequencyByWord.size());
+
                 out.flush();
             }
 
-            if (!this.chanel.finished.getAndSet(true))
-                MessageProducer.flood(Parameters.FINISHED, ownerId);
+            this.options.onFinished();
 
         } catch (IOException e) {
             e.printStackTrace();

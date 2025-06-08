@@ -28,5 +28,6 @@ public class Parameters {
         }
     }
 
-    public final static String FINISHED = "7ca6af8b-bb9a-42a1-99ac-e5f8cf368012";
+    public final static String FIRST_SHUFFLE_FINISHED = "7ca6af8b-bb9a-42a1-99ac-e5f8cf368012";
+    public final static String FINISHED = "7ca6af8b-bb9a-42a1-99ac-e5f8cf368096";
 }

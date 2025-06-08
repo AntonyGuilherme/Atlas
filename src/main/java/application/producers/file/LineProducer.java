@@ -16,7 +16,7 @@ public class LineProducer implements Runnable {
     public LineProducer(String path, CommunicationChanel chanel, Queues queues) {
         this.path = path;
         this.chanel = chanel;
-        chanel.files.incrementAndGet();
+        chanel.QUANTITY_OF_FILES_TO_CONSUME.incrementAndGet();
         this.queues = queues;
     }
 
@@ -29,7 +29,7 @@ public class LineProducer implements Runnable {
             while ((line = buffer.readLine()) != null)
                 queues.lines.add(line);
 
-            chanel.files.decrementAndGet();
+            chanel.QUANTITY_OF_FILES_TO_CONSUME.decrementAndGet();
         }
         catch (IOException e) {
             e.printStackTrace();
