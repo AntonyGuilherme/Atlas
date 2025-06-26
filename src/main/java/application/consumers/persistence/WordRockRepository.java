@@ -55,13 +55,9 @@ public class WordRockRepository implements Runnable {
             Map<String, Integer> words;
             while ((words = queues.wordsToPersist.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (words != null) {
-                    System.out.printf("database %d save bulk\n", ownerId);
                         try (final WriteBatch batch = new WriteBatch()) {
-                            for (Map.Entry<String, Integer> word : words.entrySet()){
+                            for (Map.Entry<String, Integer> word : words.entrySet())
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
-                                System.out.printf("[DATABASE] %s %d\n", word.getKey(), word.getValue());
-                                System.out.println(ByteUtils.bytesToLong(ByteUtils.longToBytes(word.getValue())));
-                            }
 
                             db.write(writeOpt, batch);
                         }
@@ -72,15 +68,10 @@ public class WordRockRepository implements Runnable {
             }
         }
 
-        try {
-            db.flushWal(true);
-        } catch (RocksDBException e) {
-            throw new RuntimeException(e);
-        }
-
         Long end = System.currentTimeMillis();
 
         System.out.println("RocksDB write completed in " + (end - start) + "ms");
+
 
         long max = 1;
         long min = 1;

@@ -22,15 +22,15 @@ public class WordsDataBaseConsumer implements Runnable {
     public void run() {
         String word;
         Map<String, Integer> words = new HashMap<>();
+        int wordsReceived = 0;
 
-        while ((word = queues.words.poll()) != null ||
-                options.dataStillOnStreaming() || (this.chanel.wordsReceived.get() < chanel.wordsExpected.get())) {
+        while ((word = queues.words.poll()) != null || wordsReceived < chanel.wordsExpected.get()) {
             if (word != null) {
                 String[] wordAndFrequency = word.split("\\s+");
                 words.put(wordAndFrequency[0],
                         words.getOrDefault(wordAndFrequency[0], 0) +
                         Integer.parseInt(wordAndFrequency[1]));
-                this.chanel.wordsReceived.incrementAndGet();
+                wordsReceived++;
 
                 if (words.size() >= 100000) {
                     Map<String, Integer> snapshot = words;
@@ -40,9 +40,10 @@ public class WordsDataBaseConsumer implements Runnable {
             }
         }
 
-        if (!words.isEmpty()) {
+        if (!words.isEmpty())
             queues.wordsToPersist.add(words);
-        }
+
+        chanel.wordsReceived.addAndGet(wordsReceived);
 
         this.options.onFinished();
     }

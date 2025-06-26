@@ -34,7 +34,6 @@ public class WordProducer implements Runnable {
     public void shuffle(String word) {
         long unsignedHash = word.hashCode() & 0xFFFFFFFFL;
         int hash = (int) (unsignedHash % Parameters.NUMBER_OF_AGENTS);
-        System.out.println(hash + " " + word);
         queues.wordsByAgent.get(hash).add(word);
     }
 }

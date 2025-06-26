@@ -30,7 +30,7 @@ public class WordByAgentProducer implements Runnable {
         this.host = connection.HOST;
         this.port = connection.WORD_PORT;
         this.words = queues.wordsByAgent.get(agentId);
-        queues.wordsTransmitted.put(agentId, new AtomicInteger(0));
+        queues.wordsTransmitted.putIfAbsent(agentId, new AtomicInteger(0));
         this.wordsTransmitted = queues.wordsTransmitted.get(agentId);
         this.ownerId = ownerId;
         this.options = options;
@@ -67,16 +67,10 @@ public class WordByAgentProducer implements Runnable {
                 for (Map.Entry<String,Integer> entry : frequencyByWord.entrySet()){
                     out.write(String.format("%s %d", entry.getKey(), entry.getValue()));
                     out.newLine();
-
-                    System.out.println(
-                            String.format(
-                                    "[NETWORK - EMISSION] %s %d",
-                                    entry.getKey(),
-                                    entry.getValue()));
-
                 }
-                this.wordsTransmitted.addAndGet(frequencyByWord.size());
                 out.flush();
+                this.wordsTransmitted.addAndGet(frequencyByWord.size());
+                System.out.println("Quantity "+ wordsTransmitted.get());
             }
 
         } catch (IOException e) {

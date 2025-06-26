@@ -16,6 +16,7 @@ import application.consumers.persistence.WordRockRepository;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Agent {
     final int agentId;
@@ -43,12 +44,13 @@ public class Agent {
     }
 
     public void mapAndShuffleFiles(String... files) {
+        RunningOptions options = new FileRunningOptions(chanel, agentId, files.length);
+
         for (String file : files){
             new Thread(new LineProducer(file, chanel, queues)).start();
             new Thread(new WordProducer(chanel, queues)).start();
             // one emitter by agent and file, so the total number would be files times agents
             List<Connection> connections = Parameters.EMIT_TO.get(agentId);
-            RunningOptions options = new FileRunningOptions(chanel, agentId);
             for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++)
                 new Thread(new WordByAgentProducer(agentId,
                         connections.get(otherId),
@@ -57,13 +59,14 @@ public class Agent {
     }
 
     public class FileRunningOptions implements RunningOptions {
-
         private final Integer agentId;
         private final CommunicationChanel chanel;
+        private final AtomicInteger pairsRunning;
 
-        public FileRunningOptions(CommunicationChanel chanel, Integer agentId) {
+        public FileRunningOptions(CommunicationChanel chanel, Integer agentId, int numberOfFiles) {
             this.chanel = chanel;
             this.agentId = agentId;
+            pairsRunning = new AtomicInteger(numberOfFiles * Parameters.NUMBER_OF_AGENTS);
         }
 
         @Override
@@ -73,9 +76,8 @@ public class Agent {
 
         @Override
         public void onFinished() {
-            if (!this.chanel.FILE_WORDS_PRODUCING_IS_FINISHED.getAndSet(true)) {
+            if (pairsRunning.decrementAndGet() == 0)
                 MessageProducer.floodFinishFirstShuffling(queues, Parameters.FIRST_SHUFFLE_FINISHED, this.agentId);
-            }
         }
     }
 

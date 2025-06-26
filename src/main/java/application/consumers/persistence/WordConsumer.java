@@ -21,10 +21,8 @@ public class WordConsumer implements Runnable {
         public void run() {
             try(BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()))){
                 String word;
-                while ((word = buffer.readLine()) != null){
+                while ((word = buffer.readLine()) != null)
                     words.add(word);
-                    System.out.println("[NETWORK - RECEIVED]" + word);
-                }
 
             } catch (IOException e) {
                 throw new RuntimeException(e);
