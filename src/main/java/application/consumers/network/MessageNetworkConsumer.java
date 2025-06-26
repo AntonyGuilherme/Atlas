@@ -34,12 +34,11 @@ public class MessageNetworkConsumer implements Runnable {
 
                     if (message != null) {
                         if (message.equals(Parameters.FIRST_SHUFFLE_FINISHED)) {
-                            chanel.FIRST_SHUFFLE_FINISHED.set(chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
                             int number = Integer.parseInt(buffer.readLine());
-                            System.out.printf("FINISHED - %d %d \n", port, number);
                             chanel.wordsExpectedPartial.addAndGet(number);
 
-                            if (chanel.agentsFinished.get() >= Parameters.NUMBER_OF_AGENTS) {
+                            if (chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS) {
+                                chanel.FIRST_SHUFFLE_FINISHED.set(true);
                                 chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
                             }
                         }
