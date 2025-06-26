@@ -24,7 +24,7 @@ public class WordNetworkConsumer implements Runnable {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
 
-            while (chanel.allFinished.intValue() < Parameters.NUMBER_OF_AGENTS) {
+            while (this.chanel.wordsReceived.get() < chanel.wordsExpected.get()) {
                 Socket socket = serverSocket.accept();
                 new Thread(new WordConsumer(socket, queues)).start();
             }

@@ -11,17 +11,30 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 public class RocksDBTest {
-    public String NAME = "romulus";
+    public String NAME = "romulus-t";
     public File dbPath;
     public RocksDB db;
 
+    public void deleteFolder(File folder) {
+        File[] contents = folder.listFiles();
+        if (contents != null)
+            for (File f : contents)
+                if (!Files.isSymbolicLink(f.toPath()))
+                    deleteFolder(f);
+
+        folder.delete();
+    }
+
     @Before
     public void setUp() {
+        File file = new File("db");
+        deleteFolder(file);
+
         RocksDB.loadLibrary();
         final Options options = new Options();
         options.setCreateIfMissing(true);
         options.setMergeOperator(new UInt64AddOperator());
-        dbPath = new File("/tmp/rocks-db", NAME);
+        dbPath = new File("db", NAME);
         try {
             Files.createDirectories(dbPath.getParentFile().toPath());
             Files.createDirectories(dbPath.getAbsoluteFile().toPath());
@@ -29,14 +42,6 @@ public class RocksDBTest {
             System.out.println("RocksDB initialized and ready to use");
         } catch(IOException | RocksDBException ex) {
             System.out.println(ex.getMessage());
-        }
-    }
-
-    public void save(String key) {
-        try {
-            db.merge(key.getBytes(), ByteUtils.longToBytes(1));
-        } catch (RocksDBException e) {
-           System.out.println(e.getMessage());
         }
     }
 
@@ -48,12 +53,17 @@ public class RocksDBTest {
         try (final WriteOptions writeOpt = new WriteOptions()) {
             for (int i = 0; i <= 9; ++i) {
                 try (final WriteBatch batch = new WriteBatch()) {
-                    for (int j = 0; j <= 100000; ++j) {
-                        batch.merge(("key" + i).getBytes(), ByteUtils.longToBytes(1));
+                    for (int j = 0; j <= 1000; ++j) {
+                        db.merge(("key" + i).getBytes(), ByteUtils.longToBytes(1));
                     }
                     db.write(writeOpt, batch);
                 }
             }
+        }
+
+        try (FlushOptions flush = new FlushOptions()){
+            flush.setWaitForFlush(false);
+            db.flush(flush);
         }
         Long end = System.currentTimeMillis();
 

@@ -34,7 +34,7 @@ public class RangesProducer implements Runnable {
     public void run() {
         RangeMap<Integer, Integer> ranges = RangeCreator.getRangeMap(queues.ranges, Parameters.NUMBER_OF_AGENTS);
 
-        new Thread(new WordsDataBaseConsumer(new ReShuffleRunningOptions(chanel), queues)).start();
+        new Thread(new WordsDataBaseConsumer(new ReShuffleRunningOptions(chanel), chanel, queues)).start();
         new Thread(new ReShuffleRockPersistence(queues, new ReShufflePersistenceOptions(chanel), agentId)).start();
 
         AtomicBoolean running = new AtomicBoolean(true);
@@ -46,7 +46,7 @@ public class RangesProducer implements Runnable {
                     connections.get(otherId),
                     otherId, queues, options)).start();
 
-        WordRockRepository repository = new WordRockRepository();
+        WordRockRepository repository = new WordRockRepository(this.agentId);
         repository.init();
 
 
@@ -134,7 +134,6 @@ public class RangesProducer implements Runnable {
             int max = 0;
             int min = Integer.MAX_VALUE;
             for (String range : ranges){
-                System.out.println(range);
                 String[] minAndMax = range.split(",");
                 int partialMin = Integer.parseInt(minAndMax[0]);
                 int partialMax = Integer.parseInt(minAndMax[1]);

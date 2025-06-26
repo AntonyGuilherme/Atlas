@@ -2,7 +2,6 @@ package application.consumers.network;
 
 import application.communication.CommunicationChanel;
 import application.communication.Queues;
-import application.producers.network.RangesProducer;
 import configuration.Parameters;
 
 import java.io.BufferedReader;
@@ -34,16 +33,24 @@ public class MessageNetworkConsumer implements Runnable {
                     String message = buffer.readLine();
 
                     if (message != null) {
-                        if (message.equals(Parameters.FIRST_SHUFFLE_FINISHED))
+                        if (message.equals(Parameters.FIRST_SHUFFLE_FINISHED)) {
                             chanel.FIRST_SHUFFLE_FINISHED.set(chanel.agentsFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS);
+                            int number = Integer.parseInt(buffer.readLine());
+                            System.out.printf("FINISHED - %d %d \n", port, number);
+                            chanel.wordsExpectedPartial.addAndGet(number);
+
+                            if (chanel.agentsFinished.get() >= Parameters.NUMBER_OF_AGENTS) {
+                                chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
+                            }
+                        }
+
                         else if (message.equals(Parameters.FINISHED))
                             chanel.allFinished.increment();
 
                         else {
-                            System.out.println("Message received: " + message);
                             this.queues.ranges.add(message);
                             if (chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS){
-                                new Thread(new RangesProducer(queues, chanel, this.agentId)).start();
+//                                new Thread(new RangesProducer(queues, chanel, this.agentId)).start();
                             }
                         }
                     }

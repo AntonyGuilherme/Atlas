@@ -17,15 +17,15 @@ public class DataBaseTest {
                 stmt = conn.createStatement();
 
                 // Exécuter une requête SELECT
-                String table = "DROP TABLE words";
+                //String table = "DROP TABLE words";
 
-                stmt.execute(table);
+                //stmt.execute(table);
 
                 // Créer un statement
                 stmt = conn.createStatement();
 
                 // Exécuter une requête SELECT
-                table = "CREATE TABLE IF NOT EXISTS words(word TEXT)";
+                String table = "CREATE TABLE IF NOT EXISTS words(word TEXT)";
 
                 stmt.execute(table);
 

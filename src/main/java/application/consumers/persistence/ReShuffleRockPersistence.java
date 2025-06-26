@@ -14,7 +14,7 @@ import java.util.Map;
 public class ReShuffleRockPersistence implements Runnable {
     RunningOptions options;
     Queues queues;
-    final String NAME = "remus";
+    final String NAME;
     Integer ownerId;
     RocksDB db;
 
@@ -22,9 +22,12 @@ public class ReShuffleRockPersistence implements Runnable {
         this.queues = queues;
         this.ownerId = ownerId;
         this.options = options;
+        NAME = String.format("remus%d",ownerId);
     }
 
-    public ReShuffleRockPersistence() {}
+    public ReShuffleRockPersistence(Integer ownerId) {
+        NAME = String.format("remus%d",ownerId);
+    }
 
     public void init() {
         RocksDB.loadLibrary();
@@ -51,10 +54,11 @@ public class ReShuffleRockPersistence implements Runnable {
             while ((words = queues.wordsToPersist.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (words != null) {
                         Long insertStart = System.currentTimeMillis();
-                        System.out.printf("Persisting words into %s\n", NAME);
                         try (final WriteBatch batch = new WriteBatch()) {
-                            for (Map.Entry<String, Integer> word : words.entrySet())
+                            for (Map.Entry<String, Integer> word : words.entrySet()){
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
+                                System.out.println(word.getKey() + ": " + word.getValue());
+                            }
                             db.write(writeOpt, batch);
                         }
                         catch (RocksDBException e) {
@@ -62,7 +66,6 @@ public class ReShuffleRockPersistence implements Runnable {
                         }
 
                         Long insertEnd = System.currentTimeMillis();
-                        System.out.printf("Partial Write in %d\n", insertEnd - insertStart);
                 }
             }
         }

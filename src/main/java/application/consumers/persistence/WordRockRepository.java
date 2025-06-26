@@ -14,7 +14,7 @@ import java.util.Map;
 public class WordRockRepository implements Runnable {
     RunningOptions options;
     Queues queues;
-    final String NAME = "romulus";
+    final String NAME;
     Integer ownerId;
     File dbPath;
     RocksDB db;
@@ -23,9 +23,12 @@ public class WordRockRepository implements Runnable {
         this.queues = queues;
         this.ownerId = ownerId;
         this.options = options;
+        NAME = String.format("romulus%d", ownerId);
     }
 
-    public WordRockRepository() {}
+    public WordRockRepository(Integer ownerId) {
+        NAME = String.format("romulus%d", ownerId);
+    }
 
     public void init() {
         RocksDB.loadLibrary();
@@ -37,7 +40,6 @@ public class WordRockRepository implements Runnable {
             Files.createDirectories(dbPath.getParentFile().toPath());
             Files.createDirectories(dbPath.getAbsoluteFile().toPath());
             db = RocksDB.open(options, dbPath.getAbsolutePath());
-//            System.out.println("RocksDB initialized and ready to use");
         } catch(IOException | RocksDBException ex) {
             System.out.println(ex.getMessage());
         }
@@ -53,43 +55,49 @@ public class WordRockRepository implements Runnable {
             Map<String, Integer> words;
             while ((words = queues.wordsToPersist.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (words != null) {
-                        Long insertStart = System.currentTimeMillis();
-//                        System.out.println("Persisting words into RocksDB");
+                    System.out.printf("database %d save bulk\n", ownerId);
                         try (final WriteBatch batch = new WriteBatch()) {
-                            for (Map.Entry<String, Integer> word : words.entrySet())
+                            for (Map.Entry<String, Integer> word : words.entrySet()){
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
+                                System.out.printf("[DATABASE] %s %d\n", word.getKey(), word.getValue());
+                                System.out.println(ByteUtils.bytesToLong(ByteUtils.longToBytes(word.getValue())));
+                            }
+
                             db.write(writeOpt, batch);
                         }
                         catch (RocksDBException e) {
                             throw new RuntimeException(e);
                         }
-
-                        Long insertEnd = System.currentTimeMillis();
-//                        System.out.printf("Partial Write in %d\n", insertEnd - insertStart);
                 }
             }
         }
 
-        Long end = System.currentTimeMillis();
-
-//        System.out.println("RocksDB write completed in " + (end - start) + "ms");
-
-        long max = 0;
-        long min = Integer.MAX_VALUE;
-
-        try (RocksIterator iterator = db.newIterator()) {
-            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                long freq = ByteUtils.bytesToLong(iterator.value());
-                if (max < freq) max = freq;
-                else if (min > freq) min = freq;
-            }
+        try {
+            db.flushWal(true);
+        } catch (RocksDBException e) {
+            throw new RuntimeException(e);
         }
 
-        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
+        Long end = System.currentTimeMillis();
+
+        System.out.println("RocksDB write completed in " + (end - start) + "ms");
+
+        long max = 1;
+        long min = 1;
+
+//        try (RocksIterator iterator = db.newIterator()) {
+//            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+//                long freq = ByteUtils.bytesToLong(iterator.value());
+//                if (max < freq) max = freq;
+//                else if (min > freq) min = freq;
+//            }
+//        } catch (Exception e) {
+//            System.out.println(e.getMessage());
+//        }
+//
+//        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
 
         db.close();
-
-        System.out.println("RocksDB closed");
     }
 
     public RocksIterator getIterator() {
@@ -101,9 +109,8 @@ public class WordRockRepository implements Runnable {
     }
 
     public static class ByteUtils {
-        private final static ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-
         public static byte[] longToBytes(long x) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(0, x);
             return buffer.array();
         }
@@ -113,5 +120,4 @@ public class WordRockRepository implements Runnable {
             return buffer.getLong();
         }
     }
-
 }

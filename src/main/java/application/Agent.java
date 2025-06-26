@@ -38,7 +38,7 @@ public class Agent {
             new Thread(new WordNetworkConsumer(connection.WORD_PORT, chanel, queues)).start();
         }
 
-        new Thread(new WordsDataBaseConsumer(new WordFromFilesRunningOptions(chanel), queues)).start();
+        new Thread(new WordsDataBaseConsumer(new WordFromFilesRunningOptions(chanel), chanel, queues)).start();
         new Thread(new WordRockRepository(queues, new SaveWordsFromFileRunningOptions(chanel), agentId)).start();
     }
 
@@ -73,8 +73,9 @@ public class Agent {
 
         @Override
         public void onFinished() {
-            if (!this.chanel.FILE_WORDS_PRODUCING_IS_FINISHED.getAndSet(true))
-                MessageProducer.flood(Parameters.FIRST_SHUFFLE_FINISHED, this.agentId);
+            if (!this.chanel.FILE_WORDS_PRODUCING_IS_FINISHED.getAndSet(true)) {
+                MessageProducer.floodFinishFirstShuffling(queues, Parameters.FIRST_SHUFFLE_FINISHED, this.agentId);
+            }
         }
     }
 

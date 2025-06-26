@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WordByAgentProducer implements Runnable {
     final String host;
@@ -18,6 +19,8 @@ public class WordByAgentProducer implements Runnable {
     final ConcurrentLinkedQueue<String> words;
     final int ownerId;
     final RunningOptions options;
+    final AtomicInteger wordsTransmitted;
+    final int agentId;
 
     public WordByAgentProducer(Integer ownerId,
                                Connection connection,
@@ -27,8 +30,11 @@ public class WordByAgentProducer implements Runnable {
         this.host = connection.HOST;
         this.port = connection.WORD_PORT;
         this.words = queues.wordsByAgent.get(agentId);
+        queues.wordsTransmitted.put(agentId, new AtomicInteger(0));
+        this.wordsTransmitted = queues.wordsTransmitted.get(agentId);
         this.ownerId = ownerId;
         this.options = options;
+        this.agentId = agentId;
     }
 
     @Override
@@ -40,14 +46,15 @@ public class WordByAgentProducer implements Runnable {
             Map<String,Integer> frequencyByWord = new HashMap<>();
             while ((word = this.words.poll()) != null || this.options.dataStillOnStreaming()) {
                 if (word != null) {
-                    frequencyByWord.putIfAbsent(word, 0);
-                    frequencyByWord.merge(word,  1, Integer::sum);
+                    frequencyByWord.put(word, frequencyByWord.getOrDefault(word, 0) + 1);
 
                     if (frequencyByWord.size() > 10000) {
                         for (Map.Entry<String,Integer> entry : frequencyByWord.entrySet()){
                             out.write(String.format("%s %d", entry.getKey(), entry.getValue()));
                             out.newLine();
                         }
+
+                        this.wordsTransmitted.addAndGet(frequencyByWord.size());
 
                         out.flush();
 
@@ -60,17 +67,22 @@ public class WordByAgentProducer implements Runnable {
                 for (Map.Entry<String,Integer> entry : frequencyByWord.entrySet()){
                     out.write(String.format("%s %d", entry.getKey(), entry.getValue()));
                     out.newLine();
+
+                    System.out.println(
+                            String.format(
+                                    "[NETWORK - EMISSION] %s %d",
+                                    entry.getKey(),
+                                    entry.getValue()));
+
                 }
-
-                System.out.println(frequencyByWord.size());
-
+                this.wordsTransmitted.addAndGet(frequencyByWord.size());
                 out.flush();
             }
 
-            this.options.onFinished();
-
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            this.options.onFinished();
         }
     }
 }
