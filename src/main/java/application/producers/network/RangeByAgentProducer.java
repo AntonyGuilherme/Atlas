@@ -47,8 +47,6 @@ public class RangeByAgentProducer implements Runnable {
                     out.write(wordAndFrequency);
                     out.newLine();
 
-                    System.out.println("WORD SECOND STAGE " + wordAndFrequency);
-
                     linesPrepared++;
                     if (linesPrepared > 10000) {
                         wordsTransmitted.addAndGet(linesPrepared);
@@ -58,7 +56,6 @@ public class RangeByAgentProducer implements Runnable {
                 }
             }
 
-            System.out.printf("[%d] words remained %d\n", ownerId, words.size());
 
             if (linesPrepared > 0) {
                 out.flush();

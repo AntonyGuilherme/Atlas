@@ -138,7 +138,6 @@ public class AgentTest {
                 long freq = WordRockRepository.ByteUtils.bytesToLong(iterator.value());
                 String word = new String(iterator.key());
                 words.put(word, words.getOrDefault(word, 0L) + freq);
-                System.out.println(word + " " + freq);
             }
         }
 

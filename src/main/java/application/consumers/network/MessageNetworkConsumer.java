@@ -27,10 +27,12 @@ public class MessageNetworkConsumer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            while (chanel.allFinished.intValue() < Parameters.NUMBER_OF_AGENTS) {
-                Socket socket = serverSocket.accept();
+            serverSocket.setSoTimeout(200);
 
-                try(BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()))){
+            while (!chanel.FINISHED.get()) {
+                try(Socket socket = serverSocket.accept()){
+
+                    try(BufferedReader buffer = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
                     String message = buffer.readLine();
 
                     if (message != null) {
@@ -42,15 +44,12 @@ public class MessageNetworkConsumer implements Runnable {
                                 chanel.FIRST_SHUFFLE_FINISHED.set(true);
                                 chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
                             }
-                        }
-                        else if (message.equals(Parameters.FINISHED)) {
+                        } else if (message.equals(Parameters.FINISHED)) {
                             int number = Integer.parseInt(buffer.readLine());
                             chanel.wordsExpectedPartial.addAndGet(number);
                             if (chanel.allFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS)
                                 chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
-                        }
-
-                        else {
+                        } else {
                             this.queues.ranges.add(message);
 
                             if (chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS) {
@@ -59,14 +58,14 @@ public class MessageNetworkConsumer implements Runnable {
                             }
                         }
                     }
-
+                }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    // network timeout
                 }
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }
 }

@@ -70,7 +70,6 @@ public class WordRockRepository implements Runnable {
 
         Long end = System.currentTimeMillis();
 
-        System.out.println("RocksDB write completed in " + (end - start) + "ms");
 
 
         long max = 1;
@@ -86,9 +85,9 @@ public class WordRockRepository implements Runnable {
             System.out.println(e.getMessage());
         }
 
-        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
-
         db.close();
+
+        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
     }
 
     public RocksIterator getIterator() {

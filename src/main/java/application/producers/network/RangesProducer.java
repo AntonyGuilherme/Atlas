@@ -33,7 +33,7 @@ public class RangesProducer implements Runnable {
     @Override
     public void run() {
         RangeMap<Integer, Integer> ranges = RangeCreator.getRangeMap(queues.ranges, Parameters.NUMBER_OF_AGENTS);
-        System.out.println(ranges);
+
         chanel.wordsExpected.set(Integer.MAX_VALUE);
         chanel.wordsExpectedPartial.set(0);
         chanel.wordsReceived.set(0);
@@ -53,19 +53,18 @@ public class RangesProducer implements Runnable {
         WordRockRepository repository = new WordRockRepository(this.agentId);
         repository.init();
 
-        // for some reason the queue is not empty when the consumers are being finished
         try (RocksIterator iterator = repository.getIterator()) {
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                 long freq = WordRockRepository.ByteUtils.bytesToLong(iterator.value());
                 Integer agentId = ranges.get((int) freq);
                 String word = new String(iterator.key());
                 queues.wordsByAgent.get(agentId).add(String.format("%s %d",word,freq));
-                System.out.println(word + " f " + freq+ " to "+ agentId);
             }
         }
 
         repository.close();
 
+        // for some reason the queue is not empty when the consumers are being finished
         for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++)
             while (!queues.wordsByAgent.get(agentId).isEmpty());
 
@@ -111,7 +110,6 @@ public class RangesProducer implements Runnable {
         @Override
         public void onFinished() {
             this.chanel.persistenceFinished.set(true);
-            System.out.println("[FINISH] Database Consumer is fin");
         }
     }
 
@@ -131,7 +129,6 @@ public class RangesProducer implements Runnable {
         @Override
         public void onFinished() {
             chanel.FINISHED.set(true);
-            System.out.println("ALL DONE");
         }
     }
 
