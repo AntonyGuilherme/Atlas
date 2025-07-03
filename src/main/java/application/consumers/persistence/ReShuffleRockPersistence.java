@@ -39,7 +39,6 @@ public class ReShuffleRockPersistence implements Runnable {
             Files.createDirectories(dbPath.getParentFile().toPath());
             Files.createDirectories(dbPath.getAbsoluteFile().toPath());
             db = RocksDB.open(options, dbPath.getAbsolutePath());
-            System.out.printf("[DATABASE] CREATE %s\n",NAME);
         } catch(IOException | RocksDBException ex) {
             System.out.println(ex.getMessage());
         }
@@ -57,7 +56,7 @@ public class ReShuffleRockPersistence implements Runnable {
                         try (final WriteBatch batch = new WriteBatch()) {
                             for (Map.Entry<String, Integer> word : words.entrySet()){
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
-                                System.out.println(word.getKey() + ": " + word.getValue());
+                                System.out.println("FINAL" + word.getKey() + ": " + word.getValue());
                             }
                             db.write(writeOpt, batch);
                         }
@@ -72,7 +71,7 @@ public class ReShuffleRockPersistence implements Runnable {
 
         db.close();
 
-        System.out.printf("[DATABASE] DONE %s\n",NAME);
+        options.onFinished();
     }
 
     public RocksIterator getIterator() {

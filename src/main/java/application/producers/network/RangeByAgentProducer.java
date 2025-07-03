@@ -8,12 +8,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WordByAgentProducer implements Runnable {
+public class RangeByAgentProducer implements Runnable {
     final String host;
     final Integer port;
     final ConcurrentLinkedQueue<String> words;
@@ -22,7 +20,7 @@ public class WordByAgentProducer implements Runnable {
     final AtomicInteger wordsTransmitted;
     final int agentId;
 
-    public WordByAgentProducer(Integer ownerId,
+    public RangeByAgentProducer(Integer ownerId,
                                Connection connection,
                                Integer agentId,
                                Queues queues,
@@ -30,7 +28,6 @@ public class WordByAgentProducer implements Runnable {
         this.host = connection.HOST;
         this.port = connection.WORD_PORT;
         this.words = queues.wordsByAgent.get(agentId);
-        queues.wordsTransmitted.putIfAbsent(agentId, new AtomicInteger(0));
         this.wordsTransmitted = queues.wordsTransmitted.get(agentId);
         this.ownerId = ownerId;
         this.options = options;
@@ -42,34 +39,30 @@ public class WordByAgentProducer implements Runnable {
         try (Socket socket = new Socket(host, port);
              BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
-            String word;
-            Map<String,Integer> frequencyByWord = new HashMap<>();
-            while ((word = this.words.poll()) != null || this.options.dataStillOnStreaming()) {
-                if (word != null) {
-                    frequencyByWord.put(word, frequencyByWord.getOrDefault(word, 0) + 1);
+            String wordAndFrequency;
+            int linesPrepared = 0;
+            while ((wordAndFrequency = this.words.poll()) != null || this.options.dataStillOnStreaming()) {
+                if (wordAndFrequency != null) {
 
-                    if (frequencyByWord.size() > 10000) {
-                        for (Map.Entry<String,Integer> entry : frequencyByWord.entrySet()){
-                            out.write(String.format("%s %d", entry.getKey(), entry.getValue()));
-                            out.newLine();
-                        }
+                    out.write(wordAndFrequency);
+                    out.newLine();
 
-                        this.wordsTransmitted.addAndGet(frequencyByWord.size());
+                    System.out.println("WORD SECOND STAGE " + wordAndFrequency);
 
+                    linesPrepared++;
+                    if (linesPrepared > 10000) {
+                        wordsTransmitted.addAndGet(linesPrepared);
                         out.flush();
-
-                        frequencyByWord.clear();
+                        linesPrepared = 0;
                     }
                 }
             }
 
-            if (!frequencyByWord.isEmpty()) {
-                for (Map.Entry<String,Integer> entry : frequencyByWord.entrySet()){
-                    out.write(String.format("%s %d", entry.getKey(), entry.getValue()));
-                    out.newLine();
-                }
+            System.out.printf("[%d] words remained %d\n", ownerId, words.size());
+
+            if (linesPrepared > 0) {
                 out.flush();
-                this.wordsTransmitted.addAndGet(frequencyByWord.size());
+                wordsTransmitted.addAndGet(linesPrepared);
             }
 
         } catch (IOException e) {

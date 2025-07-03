@@ -76,17 +76,17 @@ public class WordRockRepository implements Runnable {
         long max = 1;
         long min = 1;
 
-//        try (RocksIterator iterator = db.newIterator()) {
-//            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-//                long freq = ByteUtils.bytesToLong(iterator.value());
-//                if (max < freq) max = freq;
-//                else if (min > freq) min = freq;
-//            }
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-//
-//        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
+        try (RocksIterator iterator = db.newIterator()) {
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                long freq = ByteUtils.bytesToLong(iterator.value());
+                if (max < freq) max = freq;
+                else if (min > freq) min = freq;
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        MessageProducer.flood(String.format("%d,%d", min,max), this.ownerId);
 
         db.close();
     }

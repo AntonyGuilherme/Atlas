@@ -14,10 +14,10 @@ import configuration.Parameters;
 import application.consumers.persistence.WordRockRepository;
 import org.rocksdb.RocksIterator;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RangesProducer implements Runnable {
     final Queues queues;
@@ -33,7 +33,10 @@ public class RangesProducer implements Runnable {
     @Override
     public void run() {
         RangeMap<Integer, Integer> ranges = RangeCreator.getRangeMap(queues.ranges, Parameters.NUMBER_OF_AGENTS);
-
+        System.out.println(ranges);
+        chanel.wordsExpected.set(Integer.MAX_VALUE);
+        chanel.wordsExpectedPartial.set(0);
+        chanel.wordsReceived.set(0);
         new Thread(new WordsDataBaseConsumer(new ReShuffleRunningOptions(chanel), chanel, queues)).start();
         new Thread(new ReShuffleRockPersistence(queues, new ReShufflePersistenceOptions(chanel), agentId)).start();
 
@@ -41,41 +44,42 @@ public class RangesProducer implements Runnable {
         RangeOptions options = new RangeOptions(running, this.agentId);
 
         List<Connection> connections = Parameters.EMIT_TO.get(agentId);
-        for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++)
-            new Thread(new WordByAgentProducer(agentId,
+        for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++) {
+            queues.wordsTransmitted.get(otherId).set(0);
+            new Thread(new RangeByAgentProducer(agentId,
                     connections.get(otherId),
                     otherId, queues, options)).start();
-
+        }
         WordRockRepository repository = new WordRockRepository(this.agentId);
         repository.init();
 
-
+        // for some reason the queue is not empty when the consumers are being finished
         try (RocksIterator iterator = repository.getIterator()) {
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                 long freq = WordRockRepository.ByteUtils.bytesToLong(iterator.value());
                 Integer agentId = ranges.get((int) freq);
-
-//                if (this.agentId.equals(agentId)) continue;
-
-                String word = new String(iterator.key(), StandardCharsets.UTF_8);
+                String word = new String(iterator.key());
                 queues.wordsByAgent.get(agentId).add(String.format("%s %d",word,freq));
+                System.out.println(word + " f " + freq+ " to "+ agentId);
             }
         }
 
-
         repository.close();
+
+        for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++)
+            while (!queues.wordsByAgent.get(agentId).isEmpty());
+
         running.set(false);
     }
 
     public class RangeOptions implements RunningOptions {
         private final Integer agentId;
         private final AtomicBoolean finished;
-        private final AtomicBoolean running;
+        private final AtomicInteger running = new AtomicInteger(0);
 
         public RangeOptions(AtomicBoolean finished, Integer agentId) {
             this.finished = finished;
             this.agentId = agentId;
-            running = new AtomicBoolean(false);
         }
 
         @Override
@@ -85,8 +89,8 @@ public class RangesProducer implements Runnable {
 
         @Override
         public void onFinished() {
-            if (!running.getAndSet(true))
-                MessageProducer.flood(Parameters.FINISHED, this.agentId);
+            if (running.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS)
+                MessageProducer.floodFinishFirstShuffling(queues, Parameters.FINISHED, agentId);
         }
     }
 
@@ -101,12 +105,13 @@ public class RangesProducer implements Runnable {
 
         @Override
         public boolean dataStillOnStreaming() {
-            return this.chanel.allFinished.intValue() < Parameters.NUMBER_OF_AGENTS;
+            return this.chanel.allFinished.get() < Parameters.NUMBER_OF_AGENTS;
         }
 
         @Override
         public void onFinished() {
             this.chanel.persistenceFinished.set(true);
+            System.out.println("[FINISH] Database Consumer is fin");
         }
     }
 
@@ -120,12 +125,13 @@ public class RangesProducer implements Runnable {
 
         @Override
         public boolean dataStillOnStreaming() {
-            return !this.chanel.persistenceFinished.get();
+            return chanel.wordsReceived.get() < chanel.wordsExpected.get();
         }
 
         @Override
         public void onFinished() {
-
+            chanel.FINISHED.set(true);
+            System.out.println("ALL DONE");
         }
     }
 

@@ -2,6 +2,7 @@ package application.consumers.network;
 
 import application.communication.CommunicationChanel;
 import application.communication.Queues;
+import application.producers.network.RangesProducer;
 import configuration.Parameters;
 
 import java.io.BufferedReader;
@@ -42,14 +43,19 @@ public class MessageNetworkConsumer implements Runnable {
                                 chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
                             }
                         }
-
-                        else if (message.equals(Parameters.FINISHED))
-                            chanel.allFinished.increment();
+                        else if (message.equals(Parameters.FINISHED)) {
+                            int number = Integer.parseInt(buffer.readLine());
+                            chanel.wordsExpectedPartial.addAndGet(number);
+                            if (chanel.allFinished.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS)
+                                chanel.wordsExpected.set(chanel.wordsExpectedPartial.get());
+                        }
 
                         else {
                             this.queues.ranges.add(message);
-                            if (chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS){
-//                                new Thread(new RangesProducer(queues, chanel, this.agentId)).start();
+
+                            if (chanel.agentsWithMinAndMax.incrementAndGet() >= Parameters.NUMBER_OF_AGENTS) {
+                                // if a range start first than everyone, I'll send words to no one
+                                new Thread(new RangesProducer(queues, chanel, this.agentId)).start();
                             }
                         }
                     }
@@ -58,8 +64,6 @@ public class MessageNetworkConsumer implements Runnable {
                     throw new RuntimeException(e);
                 }
             }
-
-            System.out.println("[FINISHED]");
 
         } catch (IOException e) {
             e.printStackTrace();

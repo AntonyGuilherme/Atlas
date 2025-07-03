@@ -23,10 +23,13 @@ public class WordNetworkConsumer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-
-            while (this.chanel.wordsReceived.get() < chanel.wordsExpected.get()) {
-                Socket socket = serverSocket.accept();
-                new Thread(new WordConsumer(socket, queues)).start();
+            serverSocket.setSoTimeout(200);
+            while (!chanel.FINISHED.get()) {
+                try{
+                    Socket socket = serverSocket.accept();
+                    new Thread(new WordConsumer(socket, queues)).start();
+                }
+                catch (IOException e){}
             }
 
         } catch (IOException e) {
