@@ -13,8 +13,8 @@ $commonUsername = "costa-24" # Replace with your actual username.
 # Define the list of hostnames/IPs for the school computers
 # Replace these with your actual hostnames/IP addresses.
 $schoolComputers = @(
-    "tp-1a201-01.enst.fr",
-    "tp-1a201-03.enst.fr"
+    "tp-1a201-01.enst.fr"
+    #"tp-1a201-03.enst.fr"
 )
 
 # Local path to your "Fat" JAR file (atlas-all.jar)

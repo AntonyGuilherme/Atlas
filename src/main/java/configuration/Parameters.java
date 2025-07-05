@@ -3,7 +3,8 @@ package configuration;
 import java.util.*;
 
 public class Parameters {
-    public static final String HOST = "localhost";
+    public static final String HOST = "tp-1a201-01.enst.fr";
+    public static final int NUMBER_OF_WORDS = 10;
     public static Integer NUMBER_OF_AGENTS = 1;
     public final static Map<Integer, List<Connection>> LISTEN_TO = new HashMap<>();
     public final static Map<Integer, List<Connection>> EMIT_TO = new HashMap<>();

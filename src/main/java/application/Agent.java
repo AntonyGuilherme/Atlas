@@ -6,6 +6,7 @@ import application.communication.RunningOptions;
 import application.consumers.network.MessageNetworkConsumer;
 import application.consumers.network.WordNetworkConsumer;
 import application.consumers.persistence.WordsDataBaseConsumer;
+import application.producers.file.FakeLineProducer;
 import application.producers.file.LineProducer;
 import application.producers.file.WordProducer;
 import application.producers.network.MessageProducer;
@@ -57,6 +58,21 @@ public class Agent {
 
         for (String file : files){
             new Thread(new LineProducer(file, chanel, queues)).start();
+            new Thread(new WordProducer(chanel, queues)).start();
+            // one emitter by agent and file, so the total number would be files times agents
+            List<Connection> connections = Parameters.EMIT_TO.get(agentId);
+            for (int otherId = 0; otherId < Parameters.NUMBER_OF_AGENTS; otherId++)
+                new Thread(new WordByAgentProducer(agentId,
+                        connections.get(otherId),
+                        otherId, queues, options)).start();
+        }
+    }
+
+    public void mapAndShuffleFiles(int numberOfFiles) {
+        RunningOptions options = new FileRunningOptions(chanel, agentId, numberOfFiles);
+
+        for (int i = 0; i < numberOfFiles; i++){
+            new Thread(new FakeLineProducer(chanel, queues)).start();
             new Thread(new WordProducer(chanel, queues)).start();
             // one emitter by agent and file, so the total number would be files times agents
             List<Connection> connections = Parameters.EMIT_TO.get(agentId);
