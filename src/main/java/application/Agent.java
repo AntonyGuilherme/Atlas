@@ -32,6 +32,15 @@ public class Agent {
             queues.wordsByAgent.put(i, new ConcurrentLinkedQueue<>());
     }
 
+    public Agent (int agentId) {
+        this.agentId = agentId;
+        this.chanel = new CommunicationChanel();
+        this.queues = new Queues();
+
+        for (int i = 0; i < Parameters.NUMBER_OF_AGENTS; i++)
+            queues.wordsByAgent.put(i, new ConcurrentLinkedQueue<>());
+    }
+
     public void prepareConsumers() {
         // messages from every other agent, so one by agent is enough
         for (Connection connection: Parameters.LISTEN_TO.get(agentId)) {
