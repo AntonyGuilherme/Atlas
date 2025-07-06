@@ -56,7 +56,6 @@ public class ReShuffleRockPersistence implements Runnable {
                         try (final WriteBatch batch = new WriteBatch()) {
                             for (Map.Entry<String, Integer> word : words.entrySet()){
                                 batch.merge(word.getKey().getBytes(), ByteUtils.longToBytes(word.getValue()));
-                                System.out.println("FINAL" + word.getKey() + ": " + word.getValue());
                             }
                             db.write(writeOpt, batch);
                         }

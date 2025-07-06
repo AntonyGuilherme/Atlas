@@ -22,6 +22,7 @@ public class WordNetworkConsumer implements Runnable {
 
     @Override
     public void run() {
+        Long start = System.currentTimeMillis();
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             serverSocket.setSoTimeout(200);
             while (!chanel.FINISHED.get()) {
@@ -31,6 +32,9 @@ public class WordNetworkConsumer implements Runnable {
                 }
                 catch (IOException e){}
             }
+
+            Long end = System.currentTimeMillis();
+            System.out.println("ran in " + (end - start));
 
         } catch (IOException e) {
             e.printStackTrace();

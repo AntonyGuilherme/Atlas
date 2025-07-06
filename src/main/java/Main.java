@@ -13,12 +13,18 @@ import java.net.UnknownHostException;
 public class Main {
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            throw new RuntimeException("Usage: java -jar atlas {agent_id} {host_home}");
+        if (args.length < 3) {
+            throw new RuntimeException("Usage: java -jar atlas {agent_id} {host_home} {number_of_words}");
         }
 
         final int agentId = Integer.parseInt(args[0]);
         final String host = args[1];
+        Parameters.NUMBER_OF_WORDS = Integer.parseInt(args[2]);
+        final String[] hosts = new String[args.length - 3];
+        for (int i = 3; i < args.length; i++)
+            hosts[i - 3] = args[i];
+
+        Parameters.init(hosts);
 
         Agent agent = new Agent(agentId);
         agent.prepareConsumers();
